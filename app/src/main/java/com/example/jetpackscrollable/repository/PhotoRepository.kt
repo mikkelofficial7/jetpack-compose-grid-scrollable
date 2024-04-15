@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
 class PhotoRepository(private val apiService: ApiClient) {
-    suspend fun getPhoto(page: Int): Flow<CommonState<PhotoResponse>> {
+    suspend fun getPhoto(page: Int, itemPage: Int): Flow<CommonState<PhotoResponse>> {
         return flow {
-            val photos = apiService.getAllPhotos(page = page)
+            val photos = apiService.getAllPhotos(page = page, itemPage = itemPage)
             emit(CommonState.success(photos))
         }.flowOn(Dispatchers.IO)
     }

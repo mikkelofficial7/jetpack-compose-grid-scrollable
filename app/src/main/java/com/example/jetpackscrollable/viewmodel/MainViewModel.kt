@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModel
@@ -32,9 +33,10 @@ import java.net.URL
 class MainViewModel(private var context: Context) : ViewModel() {
     private var _listOfPhotoBitmap = arrayListOf<Bitmap>()
     private var _currentPage by mutableStateOf(1)
-    private val repository = PhotoRepository(RetrofitClient.create())
+    private val _repository = PhotoRepository(RetrofitClient.create())
     private val _currentState = MutableStateFlow(CommonState<PhotoResponse>(Status.LOADING, null, null))
     private val defaultMaxItem = 10
+    private var lastIndexed = 0
 
     fun getCurrentState() = _currentState
     fun getCurrentPage() = _currentPage
@@ -44,7 +46,7 @@ class MainViewModel(private var context: Context) : ViewModel() {
         _currentState.value = CommonState.loading()
 
         viewModelScope.launch {
-            repository.getPhoto(page)
+            _repository.getPhoto(page, defaultMaxItem)
                 .catch {
                     _currentState.value = CommonState.failed(it.message.toString())
                 }
@@ -53,9 +55,11 @@ class MainViewModel(private var context: Context) : ViewModel() {
                         _currentState.value = CommonState.failed("Response success but empty result")
                     } else {
                         it.data.mapIndexed { index, photo ->
-                            val realIndex = if(_currentPage > 1) (_currentPage * defaultMaxItem) + index else index
+                            if(_currentPage == 1) lastIndexed = index
+                            val realIndex = if(_currentPage > 1) ++lastIndexed else index
                             val bitmapPhoto = getLastBitmapCached(realIndex, photo.urls.regular)
 
+                            Log.d("TAG", "aaaaaaa $realIndex $_currentPage")
                             _listOfPhotoBitmap.add(bitmapPhoto.second!!)
                         }
                         _currentState.value = CommonState.success(it.data)
