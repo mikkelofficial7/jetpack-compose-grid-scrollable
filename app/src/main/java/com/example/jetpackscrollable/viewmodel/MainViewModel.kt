@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
-import android.util.Log
 import androidx.compose.runtime.*
 import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.ViewModel
@@ -27,7 +26,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
-
 
 @SuppressLint("StaticFieldLeak")
 class MainViewModel(private var context: Context) : ViewModel() {
@@ -59,7 +57,6 @@ class MainViewModel(private var context: Context) : ViewModel() {
                             val realIndex = if(_currentPage > 1) ++lastIndexed else index
                             val bitmapPhoto = getLastBitmapCached(realIndex, photo.urls.regular)
 
-                            Log.d("TAG", "aaaaaaa $realIndex $_currentPage")
                             _listOfPhotoBitmap.add(bitmapPhoto.second!!)
                         }
                         _currentState.value = CommonState.success(it.data)
