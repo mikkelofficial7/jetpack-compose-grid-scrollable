@@ -2,7 +2,6 @@ package com.example.jetpackscrollable
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -23,7 +23,10 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Card
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -36,6 +39,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,7 +74,7 @@ fun AppState(state: CommonState<PhotoResponse>, mainVM: MainViewModel) {
 
     when (state.status) {
         Status.LOADING -> {
-            if (mainVM.getCurrentPage() > 1) {
+            if (mainVM.getCurrentPage() > 1 && totalListPhoto.isNotEmpty()) {
                 LoadingSecondLoad(mainVM, totalListPhoto, gridState, columnState)
             } else {
                 Loading()
@@ -92,10 +96,19 @@ fun AppState(state: CommonState<PhotoResponse>, mainVM: MainViewModel) {
 
 @Composable
 fun Loading() {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize()) {
-        CircularProgressIndicator(strokeWidth = 3.dp)
+    Box (
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ){
+        Card(
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier
+                .height(100.dp)
+                .width(100.dp),
+            backgroundColor = colorResource(R.color.black_30)
+        ) {
+            CircularProgressIndicator(strokeWidth = 3.dp, modifier = Modifier.padding(18.dp), color = colorResource(R.color.white))
+        }
     }
 }
 
@@ -129,11 +142,16 @@ fun FailedPage(mainVM: MainViewModel) {
         ) {
             Text(stringResource(id = R.string.unable_to_load_more), fontSize = 20.sp)
             Spacer(modifier = Modifier.height(20.dp))
-            Button(onClick = {
-                mainVM.getAllPhotos(mainVM.getCurrentPage())
-            }) {
-                Text(stringResource(id = R.string.refresh_data))
-            }
+            Button(
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = colorResource(R.color.black),
+                    contentColor = colorResource(R.color.white)
+                ),
+                onClick = {
+                    mainVM.getAllPhotos(mainVM.getCurrentPage())
+                }) {
+                    Text(stringResource(id = R.string.refresh_data))
+                }
         }
     }
 }
@@ -205,6 +223,10 @@ fun LoadMoreButton(gridState: LazyGridState, mainVM: MainViewModel, onButtonHeig
                 .onGloballyPositioned { coordinates ->
                     onButtonHeightGet(coordinates.size.height)
                 },
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = colorResource(R.color.black),
+                contentColor = colorResource(R.color.white)
+            ),
             onClick = {
                 mainVM.getAllPhotos(mainVM.getCurrentPage())
             }) {

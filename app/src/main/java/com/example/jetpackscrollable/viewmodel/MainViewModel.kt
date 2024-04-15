@@ -16,6 +16,7 @@ import com.example.jetpackscrollable.network.RetrofitClient
 import com.example.jetpackscrollable.repository.PhotoRepository
 import com.example.jetpackscrollable.state.CommonState
 import com.example.jetpackscrollable.state.Status
+import com.example.jetpackscrollable.util.BitmapCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
@@ -26,12 +27,14 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
+
 @SuppressLint("StaticFieldLeak")
 class MainViewModel(private var context: Context) : ViewModel() {
     private var _listOfPhotoBitmap = arrayListOf<Bitmap>()
     private var _currentPage by mutableStateOf(1)
     private val repository = PhotoRepository(RetrofitClient.create())
     private val _currentState = MutableStateFlow(CommonState<PhotoResponse>(Status.LOADING, null, null))
+    private val defaultMaxItem = 10
 
     fun getCurrentState() = _currentState
     fun getCurrentPage() = _currentPage
@@ -49,20 +52,37 @@ class MainViewModel(private var context: Context) : ViewModel() {
                     if(it.data.isNullOrEmpty()) {
                         _currentState.value = CommonState.failed("Response success but empty result")
                     } else {
-                        _currentPage += 1
-                        it.data.map { photo ->
-                            val bitmapPhoto = convertUrlToBitmap(photo.urls.regular)
-                            bitmapPhoto?.let {
-                                getListOfPhotoBitmap().add(bitmapPhoto)
-                            }
+                        it.data.mapIndexed { index, photo ->
+                            val realIndex = if(_currentPage > 1) (_currentPage * defaultMaxItem) + index else index
+                            val bitmapPhoto = getLastBitmapCached(realIndex, photo.urls.regular)
+
+                            _listOfPhotoBitmap.add(bitmapPhoto.second!!)
                         }
                         _currentState.value = CommonState.success(it.data)
+                        _currentPage += 1
                     }
                 }
         }
     }
 
-    private suspend fun convertUrlToBitmap(imageUrl: String?) : Bitmap? {
+    private suspend fun getLastBitmapCached(position: Int, imageUrl: String?): Pair<Int, Bitmap?> {
+        val bitmapCache = BitmapCache()
+        val bitmapKey = "BITMAP_KEY"
+
+        return if(getListOfPhotoBitmap().isNotEmpty() && getListOfPhotoBitmap().size > position) {
+            bitmapCache.addBitmapToMemoryCache(bitmapKey, getListOfPhotoBitmap()[position])
+
+            if(bitmapCache.getBitmapFromMemCache(bitmapKey) == null) {
+                convertUrlToBitmap(position, imageUrl)
+            } else {
+                Pair(position, bitmapCache.getBitmapFromMemCache(bitmapKey))
+            }
+
+        } else {
+            convertUrlToBitmap(position, imageUrl)
+        }
+    }
+    private suspend fun convertUrlToBitmap(position: Int, imageUrl: String?) : Pair<Int, Bitmap?> {
         var bitmap: Bitmap?
         return withContext(Dispatchers.IO) {
             try {
@@ -76,10 +96,10 @@ class MainViewModel(private var context: Context) : ViewModel() {
                 input.close()
                 connection.disconnect()
 
-                return@withContext bitmap
+                return@withContext Pair(position, bitmap)
             } catch (e: IOException) {
                 e.printStackTrace()
-                return@withContext drawableToBitmap(ResourcesCompat.getDrawable(context.resources, R.drawable.ic_broken_image, null)!!)
+                return@withContext Pair(position, drawableToBitmap(ResourcesCompat.getDrawable(context.resources, R.drawable.ic_broken_image, null)!!))
             }
         }
     }
