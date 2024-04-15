@@ -153,8 +153,7 @@ fun SuccessPage(mainVM: MainViewModel,
                 totalListPhoto: List<Photos>,
                 gridState: LazyGridState,
                 columnState: LazyListState) {
-
-    val localDensity = LocalDensity.current
+    val density = LocalDensity.current
     var columnHeightDp by remember { mutableStateOf(0.dp) }
 
     LazyColumn(state = columnState){
@@ -166,7 +165,9 @@ fun SuccessPage(mainVM: MainViewModel,
                 ) {
                     items(totalListPhoto.size) { index ->
                         Box(
-                            modifier = Modifier.padding(5.dp).height(200.dp),
+                            modifier = Modifier
+                                .padding(5.dp)
+                                .height(200.dp),
                             contentAlignment = Alignment.Center
                         ){
                             ImageLoaderFromURL(index, mainVM)
@@ -176,18 +177,11 @@ fun SuccessPage(mainVM: MainViewModel,
             }
         }
         item {
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 10.dp, end = 10.dp)
-                    .onGloballyPositioned { coordinates ->
-                        columnHeightDp = with(localDensity) { coordinates.size.height.toDp() }
-                    },
-                onClick = {
-                    mainVM.getAllPhotos(mainVM.getCurrentPage())
-                }) {
-                Text(stringResource(id = R.string.load_more))
-            }
+            LoadMoreButton(gridState, mainVM, onButtonHeightGet = {
+                with(density) {
+                    columnHeightDp = it.toDp()
+                }
+            })
         }
     }
 }
@@ -199,6 +193,29 @@ private fun ImageLoaderFromURL(itemIndex: Int, mainVM: MainViewModel) {
         contentDescription = stringResource(id = R.string.image_description),
         contentScale = ContentScale.Crop
     )
+}
+
+@Composable
+fun LoadMoreButton(gridState: LazyGridState, mainVM: MainViewModel, onButtonHeightGet: (Int) -> Unit) {
+    if(!gridState.isScrollingUp()) {
+        Button(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 10.dp, end = 10.dp)
+                .onGloballyPositioned { coordinates ->
+                    onButtonHeightGet(coordinates.size.height)
+                },
+            onClick = {
+                mainVM.getAllPhotos(mainVM.getCurrentPage())
+            }) {
+            Text(stringResource(id = R.string.load_more))
+        }
+    }
+}
+@Composable
+fun LazyGridState.isScrollingUp(): Boolean {
+    val offset by remember(this) { mutableStateOf(firstVisibleItemScrollOffset) }
+    return remember(this) { derivedStateOf { (firstVisibleItemScrollOffset - offset) < 0 } }.value
 }
 
 private fun showToast(context: Context, message: String){
