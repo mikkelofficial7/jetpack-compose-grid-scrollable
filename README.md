@@ -7,3 +7,5 @@ Project Specification Breakdown Stack :
 2. Model-View-ViewModel architechture
 3. Retrofit (Network)
 4. Image loader from scratch (without any 3rd party libraries)
+
+See demo video [here](https://drive.google.com/file/d/11xKPup88TboRKObImTLEjTP2Gl5s2Xk4)
