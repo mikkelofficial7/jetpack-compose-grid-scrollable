@@ -208,8 +208,7 @@ fun SuccessPage(mainVM: MainViewModel,
 private fun ImageLoaderFromURL(itemIndex: Int, mainVM: MainViewModel) {
     Image(
         bitmap = mainVM.getListOfPhotoBitmap()[itemIndex].asImageBitmap(),
-        contentDescription = stringResource(id = R.string.image_description),
-        contentScale = ContentScale.Crop
+        contentDescription = stringResource(id = R.string.image_description)
     )
 }
 
